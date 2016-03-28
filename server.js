@@ -177,13 +177,6 @@ async function handlePRLabelChange(data) {
   if (data.comment.user.login === "HubTurbot")
     return;
 
-  if (data.action !== "created")
-    return;
-
-  // Only work on pull request
-  if (!data.issue.pull_request)
-    return;
-
   github.issues.createComment({
     user: data.repository.owner.login,
     repo: data.repository.name,

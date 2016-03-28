@@ -172,7 +172,7 @@ async function suggestReviewer(data) {
   });
 }
 
-async function handlePRLabelChange(data) {
+async function handleIssueComment(data) {
 
   if (data.comment.user.login === "HubTurbot")
     return;
@@ -185,7 +185,7 @@ async function handlePRLabelChange(data) {
   });
 }
 
-async function handleIssues(data) {
+async function handlePRLabelChange(data) {
 
   if (data.issue.user.login === "HubTurbot")
     return;
@@ -227,11 +227,6 @@ function handlePullRequest(data) {
   }
 
   return Promise.resolve(null);
-}
-
-async function handleIssueComment(data) {
-  // TODO:
-  console.log("Not implemented yet.");
 }
 
 function work(body, req) {

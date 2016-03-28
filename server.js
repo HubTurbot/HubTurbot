@@ -97,20 +97,6 @@ function getRepoConfig(request) {
   });
 }
 
-function handlePullRequest(data) {
-
-  var actions = {
-    opened: suggestReviewer,
-    labeled: handlePRLabelChange
-  };
-    
-  if (actions[data.action]) {
-    return actions[data.action](data);
-  }
-
-  return new Promise();  
-}
-
 async function suggestReviewer(data) {
   // default config
   var repoConfig = {
@@ -202,7 +188,7 @@ async function handlePRLabelChange(data) {
     user: data.repository.owner.login,
     repo: data.repository.name,
     number: data.issue.number,
-    body: "Echo: " + data.comment.body 
+    body: "Echo: " + data.comment.body
   });
 }
 
@@ -215,7 +201,7 @@ async function handleIssues(data) {
   if (data.action === "labeled" && data.issue.pull_request) {
     if (data.label.toLowerCase().indexOf("toreview") > 0) {
       if (data.issue.assignee) {
-        // Tag reviewer  
+        // Tag reviewer
         github.issues.createComment({
           user: data.repository.owner.login,
           repo: data.repository.name,
@@ -234,6 +220,20 @@ async function handleIssues(data) {
     }
   }
 
+}
+
+function handlePullRequest(data) {
+
+  var actions = {
+    opened: suggestReviewer,
+    labeled: handlePRLabelChange
+  };
+
+  if (actions[data.action]) {
+    return actions[data.action](data);
+  }
+
+  return Promise.resolve(null);
 }
 
 async function handleIssueComment(data) {
@@ -268,7 +268,7 @@ function work(body, req) {
 
   console.log("Not handling event: " + type + ", action: " + data.action);
 
-  return new Promise();
+  return Promise.resolve(null);
 };
 
 app.post('/', function(req, res) {

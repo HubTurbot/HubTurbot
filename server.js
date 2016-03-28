@@ -236,6 +236,11 @@ async function handleIssues(data) {
 
 }
 
+async function handleIssueComment(data) {
+  // TODO:
+  console.log("Not implemented yet.");
+}
+
 function work(body, req) {
 
   console.log("body: " + body.toString());

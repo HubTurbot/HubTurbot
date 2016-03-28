@@ -97,7 +97,11 @@ function getRepoConfig(request) {
   });
 }
 
-async function work(body) {
+async function work(body, req) {
+
+  console.log("body: " + body.toString());
+  console.log("headers: " + JSON.stringify(req.headers));
+
   var data = {};
   try {
     data = JSON.parse(body.toString());
@@ -183,7 +187,7 @@ async function work(body) {
 
 app.post('/', function(req, res) {
   req.pipe(bl(function(err, body) {
-    work(body).then(function() { res.end(); });
+    work(body, req).then(function() { res.end(); });
  }));
 });
 

@@ -191,8 +191,8 @@ async function handlePRLabelChange(data) {
     return;
 
   // Label added to PR
-  if (data.action === "labeled" && data.issue.pull_request) {
-    if (data.label.toLowerCase().indexOf("toreview") > 0) {
+  if (data.action === "labeled") {
+    if (data.label.name.toLowerCase().indexOf("toreview") > 0) {
       if (data.issue.assignee) {
         // Tag reviewer
         github.issues.createComment({

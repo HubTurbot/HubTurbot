@@ -193,6 +193,36 @@ async function handleIssueComment(data) {
   });
 }
 
+async function handleIssues(data) {
+
+  if (data.issue.user.login === "HubTurbot")
+    return;
+
+  // Label added to PR
+  if (data.action === "labeled" && data.issue.pull_request) {
+    if (data.label.toLowerCase().indexOf("toreview") > 0) {
+      if (data.issue.assignee) {
+        // Tag reviewer  
+        github.issues.createComment({
+          user: data.repository.owner.login,
+          repo: data.repository.name,
+          number: data.issue.number,
+          body: "Ready to review. @" + data.issue.assignee.login
+        });
+      } else {
+        // Tag default person
+        github.issues.createComment({
+          user: data.repository.owner.login,
+          repo: data.repository.name,
+          number: data.issue.number,
+          body: "Ready to review, please assign a reviewer. @LowWeiLin @dariusf"
+        });
+      }
+    }
+  }
+
+}
+
 function work(body, req) {
 
   console.log("body: " + body.toString());
@@ -207,7 +237,9 @@ function work(body, req) {
     console.error(e);
   }
 
-  var actions = {pull_request: handlePullRequest, issue_comment: handleIssueComment};
+  var actions = {pull_request: handlePullRequest,
+                 issue_comment: handleIssueComment,
+                 issues: handleIssues};
 
   // Call event type handler
   if (actions[type]) {

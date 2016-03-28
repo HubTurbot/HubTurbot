@@ -173,7 +173,7 @@ async function handlePullRequest(data) {
   });
 }
 
-async function handleIssueComment(data) {
+function handleIssueComment(data) {
 
   if (data.comment.user.login === "HubTurbot")
     return;
@@ -193,7 +193,7 @@ async function handleIssueComment(data) {
   });
 }
 
-async function work(body, req) {
+function work(body, req) {
 
   console.log("body: " + body.toString());
   console.log("headers: " + JSON.stringify(req.headers));
@@ -211,7 +211,7 @@ async function work(body, req) {
 
   // Call event type handler
   if (action[type]) {
-    await action[type](data);
+    action[type](data);
   }
 
   return;

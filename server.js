@@ -173,7 +173,7 @@ async function handlePullRequest(data) {
   });
 }
 
-function handleIssueComment(data) {
+async function handleIssueComment(data) {
 
   if (data.comment.user.login === "HubTurbot")
     return;
@@ -211,10 +211,10 @@ function work(body, req) {
 
   // Call event type handler
   if (actions[type]) {
-    actions[type](data);
+    return actions[type](data);
   }
 
-  return;
+  return new Promise();
 };
 
 app.post('/', function(req, res) {

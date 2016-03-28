@@ -97,8 +97,21 @@ function getRepoConfig(request) {
   });
 }
 
-async function handlePullRequest(data) {
+function handlePullRequest(data) {
 
+  var actions = {
+    opened: suggestReviewer,
+    labeled: handlePRLabelChange
+  };
+    
+  if (actions[data.action]) {
+    return actions[data.action](data);
+  }
+
+  return new Promise();  
+}
+
+async function suggestReviewer(data) {
   // default config
   var repoConfig = {
     maxReviewers: 3,
@@ -173,7 +186,7 @@ async function handlePullRequest(data) {
   });
 }
 
-async function handleIssueComment(data) {
+async function handlePRLabelChange(data) {
 
   if (data.comment.user.login === "HubTurbot")
     return;
@@ -237,9 +250,10 @@ function work(body, req) {
     console.error(e);
   }
 
-  var actions = {pull_request: handlePullRequest,
-                 issue_comment: handleIssueComment,
-                 issues: handleIssues};
+  var actions = {
+    pull_request: handlePullRequest,
+    issue_comment: handleIssueComment
+  };
 
   // Call event type handler
   if (actions[type]) {

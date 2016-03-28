@@ -97,17 +97,7 @@ function getRepoConfig(request) {
   });
 }
 
-async function work(body, req) {
-
-  console.log("body: " + body.toString());
-  console.log("headers: " + JSON.stringify(req.headers));
-
-  var data = {};
-  try {
-    data = JSON.parse(body.toString());
-  } catch (e) {
-    console.error(e);
-  }
+function handlePullRequest(data) {
 
   // default config
   var repoConfig = {
@@ -181,6 +171,48 @@ async function work(body, req) {
       defaultMessageGenerator
     )
   });
+}
+
+function handleIssueComment(data) {
+
+  if (data.comment.user.login === "HubTurbot")
+    return;
+
+  if (data.action !== "created")
+    return;
+
+  // Only work on pull request
+  if (!data.issue.pull_request)
+    return;
+
+  github.issues.createComment({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    number: data.issue.number,
+    body: "Echo: " + data.comment.body 
+  });
+}
+
+async function work(body, req) {
+
+  console.log("body: " + body.toString());
+  console.log("headers: " + JSON.stringify(req.headers));
+
+  var type = req.headers["x-github-event"];
+
+  var data = {};
+  try {
+    data = JSON.parse(body.toString());
+  } catch (e) {
+    console.error(e);
+  }
+
+  var actions = {pull_request: handlePullRequest, issue_comment: handleIssueComment};
+
+  // Call event type handler
+  if (action[type]) {
+    action[type](data);
+  }
 
   return;
 };

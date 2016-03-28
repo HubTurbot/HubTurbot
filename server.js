@@ -187,26 +187,26 @@ async function handleIssueComment(data) {
 
 async function handlePRLabelChange(data) {
 
-  if (data.issue.user.login === "HubTurbot")
+  if (data.sender.login === "HubTurbot")
     return;
 
   // Label added to PR
   if (data.action === "labeled") {
     if (data.label.name.toLowerCase().indexOf("toreview") > 0) {
-      if (data.issue.assignee) {
+      if (data.pull_request.assignee) {
         // Tag reviewer
         github.issues.createComment({
           user: data.repository.owner.login,
           repo: data.repository.name,
-          number: data.issue.number,
-          body: "Ready to review. @" + data.issue.assignee.login
+          number: data.pull_request.number,
+          body: "Ready to review. @" + data.pull_request.assignee.login
         });
       } else {
         // Tag default person
         github.issues.createComment({
           user: data.repository.owner.login,
           repo: data.repository.name,
-          number: data.issue.number,
+          number: data.pull_request.number,
           body: "Ready to review, please assign a reviewer. @LowWeiLin @dariusf"
         });
       }
@@ -226,7 +226,7 @@ function handlePullRequest(data) {
     return actions[data.action](data);
   }
 
-  return Promise.resolve(null);
+  return Promise.resolve();
 }
 
 function work(body, req) {
@@ -256,12 +256,17 @@ function work(body, req) {
 
   console.log("Not handling event: " + type + ", action: " + data.action);
 
-  return Promise.resolve(null);
+  return Promise.resolve();
 };
 
 app.post('/', function(req, res) {
   req.pipe(bl(function(err, body) {
-    work(body, req).then(function() { res.end(); });
+    work(body, req)
+      .then(() => res.end())
+      .catch(e => {
+        console.error('An error occurred:', e);
+        res.end();
+      });
  }));
 });
 

@@ -210,8 +210,8 @@ function work(body, req) {
   var actions = {pull_request: handlePullRequest, issue_comment: handleIssueComment};
 
   // Call event type handler
-  if (action[type]) {
-    action[type](data);
+  if (actions[type]) {
+    actions[type](data);
   }
 
   return;

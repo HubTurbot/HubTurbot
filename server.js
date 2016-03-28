@@ -243,8 +243,11 @@ function work(body, req) {
 
   // Call event type handler
   if (actions[type]) {
+    console.log("Handling event: " + type + ", action: " + data.action);
     return actions[type](data);
   }
+
+  console.log("Not handling event: " + type + ", action: " + data.action);
 
   return new Promise();
 };

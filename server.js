@@ -97,7 +97,7 @@ function getRepoConfig(request) {
   });
 }
 
-function handlePullRequest(data) {
+async function handlePullRequest(data) {
 
   // default config
   var repoConfig = {
@@ -173,7 +173,7 @@ function handlePullRequest(data) {
   });
 }
 
-function handleIssueComment(data) {
+async function handleIssueComment(data) {
 
   if (data.comment.user.login === "HubTurbot")
     return;
@@ -211,7 +211,7 @@ async function work(body, req) {
 
   // Call event type handler
   if (action[type]) {
-    action[type](data);
+    await action[type](data);
   }
 
   return;

@@ -16,6 +16,7 @@ var fs = require('fs');
 var mentionBot = require('./mention-bot.js');
 var messageGenerator = require('./message.js');
 var util = require('util');
+var twss = require('twss');
 
 var GitHubApi = require('github');
 
@@ -177,12 +178,21 @@ async function handleIssueComment(data) {
   if (data.comment.user.login === "HubTurbot")
     return;
 
-  github.issues.createComment({
-    user: data.repository.owner.login,
-    repo: data.repository.name,
-    number: data.issue.number,
-    body: "Echo: " + data.comment.body
-  });
+  if (twss.is(data.comment.body)) {
+    github.issues.createComment({
+      user: data.repository.owner.login,
+      repo: data.repository.name,
+      number: data.issue.number,
+      body: "That's what she said!"
+    });
+  } else {
+    github.issues.createComment({
+      user: data.repository.owner.login,
+      repo: data.repository.name,
+      number: data.issue.number,
+      body: "Echo: " + data.comment.body
+    });
+  }
 }
 
 async function handlePRLabelChange(data) {

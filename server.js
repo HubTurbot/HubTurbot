@@ -220,6 +220,13 @@ async function handlePRLabelChange(data) {
           body: "Ready to review, please assign a reviewer. @LowWeiLin @dariusf"
         });
       }
+    } else if (data.label.name.toLowerCase().indexOf("critical") > 0) {
+      github.issues.createComment({
+        user: data.repository.owner.login,
+        repo: data.repository.name,
+        number: data.pull_request.number,
+        body: "![Alt Text](https://media.giphy.com/media/AhjXalGPAfJg4/giphy.gif)"
+      });
     }
   }
 

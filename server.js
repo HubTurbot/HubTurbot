@@ -173,10 +173,54 @@ async function suggestReviewer(data) {
   });
 }
 
+function promisify(f) {
+  return function() {
+    var args = Array.prototype.slice.call(arguments);
+    return new Promise(function(resolve, reject) {
+      return f.apply(null, args.concat([function(err, res) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res);
+        }
+      }]));
+    });
+  };
+}
+
+function applyToReview(user, repo, number) {
+  return promisify(github.issues.getIssueLabels)({
+    user, repo, number
+  }).then(function(res) {
+
+    var labels = res.map(r => r.name);
+    var groupRegex = /^(s(?:tatus)?)\./;
+    var statusLabels = labels.filter(label => groupRegex.test(label));
+
+    if (statusLabels.length === 0) {
+      throw new Exception('No status labels, not doing anything');
+    }
+
+    var statusPrefix = groupRegex.exec(statusLabels[0])[1];
+
+    var newLabels = labels
+      .filter(label => !groupRegex.test(label))
+      .concat([statusPrefix + '.toReview']);
+
+    return promisify(github.issues.edit)({
+      user, repo, number, labels: newLabels
+    });
+  }).catch(function(e) {
+    console.log('Failed to change label', e, e.stack)
+  });
+}
+
 async function handleIssueComment(data) {
 
-  if (data.comment.user.login === "HubTurbot")
+  // HubTurbot will not reply to itself
+  if (data.comment.user.login === "HubTurbot") {
     return;
+  }
 
   if (twss.is(data.comment.body)) {
     github.issues.createComment({
@@ -185,6 +229,11 @@ async function handleIssueComment(data) {
       number: data.issue.number,
       body: "That's what she said!"
     });
+  } else if (/ready (?:to|for) review/.test(data.comment.body)) {
+    return applyToReview(
+      data.repository.owner.login,
+      data.repository.name,
+      data.issue.number);
   } else {
     github.issues.createComment({
       user: data.repository.owner.login,
@@ -281,7 +330,7 @@ app.post('/', function(req, res) {
     work(body, req)
       .then(() => res.end())
       .catch(e => {
-        console.error('An error occurred:', e);
+        console.error('An error occurred:', e, e.stack);
         res.end();
       });
  }));

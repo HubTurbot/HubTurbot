@@ -198,6 +198,7 @@ function applyToReview(user, repo, number) {
     var statusLabels = labels.filter(label => groupRegex.test(label));
 
     if (statusLabels.length === 0) {
+      // TODO identify the prefix from the repo's labels, then continue
       throw new Exception('No status labels, not doing anything');
     }
 
@@ -212,6 +213,9 @@ function applyToReview(user, repo, number) {
     });
   }).catch(function(e) {
     console.log('Failed to change label', e, e.stack)
+    if (e.code === 404) {
+      console.log('Have you added HubTurbot as a collaborator to your repository?');
+    }
   });
 }
 
@@ -297,8 +301,8 @@ function handlePullRequest(data) {
 
 function work(body, req) {
 
-  console.log("body: " + body.toString());
-  console.log("headers: " + JSON.stringify(req.headers));
+  // console.log("body: " + body.toString());
+  // console.log("headers: " + JSON.stringify(req.headers));
 
   var type = req.headers["x-github-event"];
 

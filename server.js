@@ -65,6 +65,11 @@ github.authenticate({
 var app = express();
 
 function buildMentionSentence(reviewers) {
+
+  if (!Array.isArray(reviewers)) {
+    reviewers = [reviewers];
+  }
+
   var atReviewers = reviewers.map(function(owner) { return '@' + owner; });
 
   if (reviewers.length === 1) {

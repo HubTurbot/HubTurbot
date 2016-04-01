@@ -1,0 +1,6 @@
+{
+  findPotentialReviewers: true,
+  teamLead: 'kanghj',
+  statusPrefix: 'status.',
+  reviewLabel: 'toReview'
+}

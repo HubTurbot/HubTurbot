@@ -20,7 +20,7 @@ var twss = require('twss');
 
 var GitHubApi = require('github');
 
-var CONFIG_PATH = '.mention-bot';
+var CONFIG_PATH = '.hubturbot';
 
 if (!process.env.GITHUB_TOKEN) {
   console.error('The bot was started without a github account to post with.');
@@ -98,50 +98,13 @@ function getRepoConfig(request) {
   });
 }
 
-async function suggestReviewer(data) {
-  // default config
-  var repoConfig = {
-    maxReviewers: 3,
-    numFilesToCheck: 5,
-    userBlacklist: [],
-    userBlacklistForPR: [],
-    userWhitelist: [],
-    fileBlacklist: [],
-    requiredOrgs: [],
-    findPotentialReviewers: true,
-    actions: ['opened'],
-  };
+async function suggestReviewer(config, data) {
 
-  try {
-    // request config from repo
-    var configRes = await getRepoConfig({
-      user: data.repository.owner.login,
-      repo: data.repository.name,
-      path: CONFIG_PATH,
-      headers: {
-        Accept: 'application/vnd.github.v3.raw'
-      }
-    });
-
-    repoConfig = {...repoConfig, ...JSON.parse(configRes)};
-  } catch (e) {
-    console.error(e);
-  }
-
-  if (repoConfig.actions.indexOf(data.action) === -1) {
+  if (config.actions.indexOf(data.action) === -1) {
     console.log(
       'Skipping because action is ' + data.action + '.',
-      'We only care about: "' + repoConfig.actions.join("', '") + '"'
+      'We only care about: "' + config.actions.join("', '") + '"'
     );
-    return;
-  }
-
-  if (process.env.REQUIRED_ORG) {
-    repoConfig.requiredOrgs.push(process.env.REQUIRED_ORG);
-  }
-
-  if (repoConfig.userBlacklistForPR.indexOf(data.pull_request.user.login) >= 0) {
-    console.log('Skipping because blacklisted user created Pull Request.');
     return;
   }
 
@@ -150,7 +113,7 @@ async function suggestReviewer(data) {
     data.pull_request.number, // 23
     data.pull_request.user.login, // 'mention-bot'
     data.pull_request.base.ref, // 'master'
-    repoConfig,
+    config,
     github
   );
 
@@ -188,25 +151,18 @@ function promisify(f) {
   };
 }
 
-function applyToReview(user, repo, number) {
+function applyToReview(config, user, repo, number) {
   return promisify(github.issues.getIssueLabels)({
     user, repo, number
   }).then(function(res) {
 
     var labels = res.map(r => r.name);
-    var groupRegex = /^(s(?:tatus)?)\./;
-    var statusLabels = labels.filter(label => groupRegex.test(label));
 
-    if (statusLabels.length === 0) {
-      // TODO identify the prefix from the repo's labels, then continue
-      throw new Exception('No status labels, not doing anything');
-    }
-
-    var statusPrefix = groupRegex.exec(statusLabels[0])[1];
-
+    // Remove other prefixed labels
+    var groupRegex = new RegExp('^' + config.statusPrefix);
     var newLabels = labels
       .filter(label => !groupRegex.test(label))
-      .concat([statusPrefix + '.toReview']);
+      .concat([config.statusPrefix + config.reviewLabel]);
 
     return promisify(github.issues.edit)({
       user, repo, number, labels: newLabels
@@ -219,7 +175,7 @@ function applyToReview(user, repo, number) {
   });
 }
 
-async function handleIssueComment(data) {
+async function handleIssueComment(config, data) {
 
   // HubTurbot will not reply to itself
   if (data.comment.user.login === "HubTurbot") {
@@ -235,6 +191,7 @@ async function handleIssueComment(data) {
     });
   } else if (/ready (?:to|for) review/.test(data.comment.body)) {
     return applyToReview(
+      config,
       data.repository.owner.login,
       data.repository.name,
       data.issue.number);
@@ -248,21 +205,21 @@ async function handleIssueComment(data) {
   }
 }
 
-async function handlePRLabelChange(data) {
+async function handlePRLabelChange(config, data) {
 
   if (data.sender.login === "HubTurbot")
     return;
 
   // Label added to PR
   if (data.action === "labeled") {
-    if (data.label.name.toLowerCase().indexOf("toreview") > 0) {
+    if (data.label.name.toLowerCase().indexOf(config.reviewLabel.toLowerCase()) > 0) {
       if (data.pull_request.assignee) {
         // Tag reviewer
         github.issues.createComment({
           user: data.repository.owner.login,
           repo: data.repository.name,
           number: data.pull_request.number,
-          body: "Ready to review. @" + data.pull_request.assignee.login
+          body: "Ready to review. " + buildMentionSentence(data.pull_request.assignee.login)
         });
       } else {
         // Tag default person
@@ -270,7 +227,7 @@ async function handlePRLabelChange(data) {
           user: data.repository.owner.login,
           repo: data.repository.name,
           number: data.pull_request.number,
-          body: "Ready to review, please assign a reviewer. @LowWeiLin @dariusf"
+          body: "Ready to review, please assign a reviewer. " + buildMentionSentence(config.teamLead)
         });
       }
     } else if (data.label.name.toLowerCase().indexOf("critical") > 0) {
@@ -285,7 +242,7 @@ async function handlePRLabelChange(data) {
 
 }
 
-function handlePullRequest(data) {
+function handlePullRequest(config, data) {
 
   var actions = {
     opened: suggestReviewer,
@@ -293,10 +250,56 @@ function handlePullRequest(data) {
   };
 
   if (actions[data.action]) {
-    return actions[data.action](data);
+    return actions[data.action](config, data);
   }
 
   return Promise.resolve();
+}
+
+async function loadConfig(data) {
+
+  var repoConfig = {
+    maxReviewers: 3,
+    numFilesToCheck: 5,
+    userBlacklist: [],
+    userBlacklistForPR: [],
+    userWhitelist: [],
+    fileBlacklist: [],
+    requiredOrgs: [],
+    findPotentialReviewers: true,
+
+    teamLead: '',
+    statusPrefix: 'status.',
+    reviewLabel: 'toReview'
+  };
+
+  try {
+    // request config from repo
+    var configRes = await getRepoConfig({
+      user: data.repository.owner.login,
+      repo: data.repository.name,
+      path: CONFIG_PATH,
+      headers: {
+        Accept: 'application/vnd.github.v3.raw'
+      }
+    });
+
+    repoConfig = {...repoConfig, ...JSON.parse(configRes)};
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (process.env.REQUIRED_ORG) {
+    repoConfig.requiredOrgs.push(process.env.REQUIRED_ORG);
+  }
+
+  if (repoConfig.userBlacklistForPR.indexOf(data.pull_request.user.login) >= 0) {
+    console.log('Skipping because blacklisted user ' +
+      data.pull_request.user.login + 'created Pull Request.');
+    return;
+  }
+
+  return repoConfig;
 }
 
 function work(body, req) {
@@ -313,6 +316,8 @@ function work(body, req) {
     console.error(e);
   }
 
+  var config = loadConfig(data);
+
   var actions = {
     pull_request: handlePullRequest,
     issue_comment: handleIssueComment
@@ -321,7 +326,7 @@ function work(body, req) {
   // Call event type handler
   if (actions[type]) {
     console.log("Handling event: " + type + ", action: " + data.action);
-    return actions[type](data);
+    return actions[type](config, data);
   }
 
   console.log("Not handling event: " + type + ", action: " + data.action);

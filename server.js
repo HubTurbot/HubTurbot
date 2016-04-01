@@ -195,14 +195,7 @@ async function handleIssueComment(config, data) {
       data.repository.owner.login,
       data.repository.name,
       data.issue.number);
-  } else {
-    github.issues.createComment({
-      user: data.repository.owner.login,
-      repo: data.repository.name,
-      number: data.issue.number,
-      body: "Echo: " + data.comment.body
-    });
-  }
+  } 
 }
 
 async function handlePRLabelChange(config, data) {

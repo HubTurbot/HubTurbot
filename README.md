@@ -7,6 +7,7 @@ I can do many clever things:
 
 - Notify a reviewer when a PR is ready for review
 - Respond to comments by toggling PR status labels
+- Create status labels automatically
 - Automatically identify potential reviewers for new PRs (see [mention-bot's documentation](https://github.com/facebook/mention-bot))
 - Make inappropriate jokes
 
@@ -19,6 +20,10 @@ When a `toReview` label is applied, I'll comment on the PR, mentioning a reviewe
 **Respond to comments by toggling PR status labels**
 
 When a comment with the phrase "ready for review" is made, I'll toggle the status label to `toReview`.
+
+**Create status labels automatically**
+
+When a comment with the phrase "@HubTurbot create all labels please" is made, I'll create all the necessary status labels.
 
 ## How to get in touch
 

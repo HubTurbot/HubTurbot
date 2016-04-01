@@ -223,7 +223,8 @@ function createDefaultLabels(data) {
   });
 }
 
-
+async function handleIssueComment(config, data) {
+  
   // HubTurbot will not reply to itself
   if (data.comment.user.login === "HubTurbot") {
     return;

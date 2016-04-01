@@ -180,8 +180,56 @@ function applyToReview(config, user, repo, number) {
   });
 }
 
-async function handleIssueComment(config, data) {
+function createDefaultLabels(config, data) {
 
+  var statusPrefix = config.statusPrefix;
+
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: statusPrefix + "Discarded",
+    color: "000000"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: statusPrefix + "MergeApproved",
+    color: "2A6E2F"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: statusPrefix + "Ongoing",
+    color: "6BC471"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: statusPrefix + "OnHold",
+    color: "E2F3E8"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: statusPrefix + "ToDiscuss",
+    color: "bfe5bf"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: statusPrefix + "ToReview",
+    color: "47B74E"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: statusPrefix + "ToMerge",
+    color: "38923D"
+  });
+}
+
+async function handleIssueComment(config, data) {
+  
   // HubTurbot will not reply to itself
   if (data.comment.user.login === "HubTurbot") {
     return;
@@ -195,6 +243,8 @@ async function handleIssueComment(config, data) {
       number: data.issue.number,
       body: "That's what she said!"
     });
+  } else if (/@HubTurbot create all labels please/.test(data.comment.body)) {
+    createDefaultLabels(config, data);
   } else if (/ready (?:to|for) review/.test(data.comment.body)) {
     console.log('Applying toReview');
     return applyToReview(

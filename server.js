@@ -199,7 +199,7 @@ function applyToReview(user, repo, number) {
 
     if (statusLabels.length === 0) {
       // TODO identify the prefix from the repo's labels, then continue
-      throw new Exception('No status labels, not doing anything');
+      throw new Error('No status labels, not doing anything');
     }
 
     var statusPrefix = groupRegex.exec(statusLabels[0])[1];

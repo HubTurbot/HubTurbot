@@ -183,6 +183,7 @@ async function handleIssueComment(config, data) {
   }
 
   if (twss.is(data.comment.body)) {
+    console.log('Posting a twss');
     github.issues.createComment({
       user: data.repository.owner.login,
       repo: data.repository.name,
@@ -190,11 +191,14 @@ async function handleIssueComment(config, data) {
       body: "That's what she said!"
     });
   } else if (/ready (?:to|for) review/.test(data.comment.body)) {
+    console.log('Applying toReview');
     return applyToReview(
       config,
       data.repository.owner.login,
       data.repository.name,
       data.issue.number);
+  } else {
+    console.log('Not responding to this comment');
   }
 }
 
@@ -207,7 +211,7 @@ async function handlePRLabelChange(config, data) {
   if (data.action === "labeled") {
     if (data.label.name.toLowerCase().indexOf(config.reviewLabel.toLowerCase()) > 0) {
       if (data.pull_request.assignee) {
-        // Tag reviewer
+        console.log('Tagging reviewer');
         github.issues.createComment({
           user: data.repository.owner.login,
           repo: data.repository.name,
@@ -215,7 +219,7 @@ async function handlePRLabelChange(config, data) {
           body: "Ready to review. " + buildMentionSentence(data.pull_request.assignee.login)
         });
       } else {
-        // Tag default person
+        console.log('Tagging team lead');
         github.issues.createComment({
           user: data.repository.owner.login,
           repo: data.repository.name,
@@ -224,6 +228,7 @@ async function handlePRLabelChange(config, data) {
         });
       }
     } else if (data.label.name.toLowerCase().indexOf("critical") > 0) {
+      console.log('Posting critical gif');
       github.issues.createComment({
         user: data.repository.owner.login,
         repo: data.repository.name,
@@ -279,26 +284,28 @@ async function loadConfig(data) {
 
     repoConfig = {...repoConfig, ...JSON.parse(configRes)};
   } catch (e) {
-    console.error(e);
+    console.log('Failed to find or parse config file', e);
   }
 
   if (process.env.REQUIRED_ORG) {
     repoConfig.requiredOrgs.push(process.env.REQUIRED_ORG);
   }
 
-  if (repoConfig.userBlacklistForPR.indexOf(data.pull_request.user.login) >= 0) {
-    console.log('Skipping because blacklisted user ' +
-      data.pull_request.user.login + 'created Pull Request.');
-    return;
-  }
+  // TODO this won't work for all requests, since data.pull_requests sometimes will have no value
+
+  // if (repoConfig.userBlacklistForPR.indexOf(data.pull_request.user.login) >= 0) {
+  //   console.log('Skipping because blacklisted user ' +
+  //     data.pull_request.user.login + 'created Pull Request.');
+  //   return;
+  // }
 
   return repoConfig;
 }
 
-function work(body, req) {
+async function work(body, req) {
 
-  console.log('\nbody: ' + body.toString());
-  console.log('\nheaders: ' + JSON.stringify(req.headers));
+  // console.log('\nbody: ' + body.toString());
+  // console.log('\nheaders: ' + JSON.stringify(req.headers));
 
   var type = req.headers["x-github-event"];
 
@@ -306,10 +313,11 @@ function work(body, req) {
   try {
     data = JSON.parse(body.toString());
   } catch (e) {
+    console.log('json parse error');
     console.error(e);
   }
 
-  var config = loadConfig(data);
+  var config = await loadConfig(data);
 
   var actions = {
     pull_request: handlePullRequest,
@@ -317,14 +325,12 @@ function work(body, req) {
   };
 
   // Call event type handler
-  if (actions[type]) {
+  if (!actions[type]) {
+    console.log("Not handling event: " + type + ", action: " + data.action);
+  } else {
     console.log("Handling event: " + type + ", action: " + data.action);
-    return actions[type](config, data);
+    await actions[type](config, data);
   }
-
-  console.log("Not handling event: " + type + ", action: " + data.action);
-
-  return Promise.resolve();
 };
 
 app.post('/', function(req, res) {

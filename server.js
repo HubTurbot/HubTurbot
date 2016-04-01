@@ -176,46 +176,49 @@ function applyToReview(config, user, repo, number) {
 }
 
 function createDefaultLabels(data) {
+
+  var statusPrefix = "status.";
+
   github.issues.createLabel({
     user: data.repository.owner.login,
     repo: data.repository.name,
-    name: "s.Discarded",
+    name: statusPrefix + "Discarded",
     color: "000000"
   });
   github.issues.createLabel({
     user: data.repository.owner.login,
     repo: data.repository.name,
-    name: "s.MergeApproved",
+    name: statusPrefix + "MergeApproved",
     color: "2A6E2F"
   });
   github.issues.createLabel({
     user: data.repository.owner.login,
     repo: data.repository.name,
-    name: "s.Ongoing",
+    name: statusPrefix + "Ongoing",
     color: "6BC471"
   });
   github.issues.createLabel({
     user: data.repository.owner.login,
     repo: data.repository.name,
-    name: "s.OnHold",
+    name: statusPrefix + "OnHold",
     color: "E2F3E8"
   });
   github.issues.createLabel({
     user: data.repository.owner.login,
     repo: data.repository.name,
-    name: "s.ToDiscuss",
+    name: statusPrefix + "ToDiscuss",
     color: "bfe5bf"
   });
   github.issues.createLabel({
     user: data.repository.owner.login,
     repo: data.repository.name,
-    name: "s.ToReview",
+    name: statusPrefix + "ToReview",
     color: "47B74E"
   });
   github.issues.createLabel({
     user: data.repository.owner.login,
     repo: data.repository.name,
-    name: "s.ToMerge",
+    name: statusPrefix + "ToMerge",
     color: "38923D"
   });
 }

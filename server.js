@@ -236,7 +236,14 @@ async function handleIssueComment(config, data) {
   }
   
   if (/@HubTurbot create all labels please/.test(data.comment.body)) {
+    console.log('Creating labels');
     createDefaultLabels(config, data);
+    github.issues.createComment({
+      user: data.repository.owner.login,
+      repo: data.repository.name,
+      number: data.issue.number,
+      body: "All done!"
+    });
   } else if (/ready (?:to|for) review/.test(data.comment.body)) {
     console.log('Applying toReview');
     return applyToReview(

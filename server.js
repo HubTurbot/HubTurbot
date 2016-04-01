@@ -234,16 +234,8 @@ async function handleIssueComment(config, data) {
   if (data.comment.user.login === "HubTurbot") {
     return;
   }
-
-  if (twss.is(data.comment.body)) {
-    console.log('Posting a twss');
-    github.issues.createComment({
-      user: data.repository.owner.login,
-      repo: data.repository.name,
-      number: data.issue.number,
-      body: "That's what she said!"
-    });
-  } else if (/@HubTurbot create all labels please/.test(data.comment.body)) {
+  
+  if (/@HubTurbot create all labels please/.test(data.comment.body)) {
     createDefaultLabels(config, data);
   } else if (/ready (?:to|for) review/.test(data.comment.body)) {
     console.log('Applying toReview');
@@ -252,6 +244,14 @@ async function handleIssueComment(config, data) {
       data.repository.owner.login,
       data.repository.name,
       data.issue.number);
+  } else if (twss.is(data.comment.body)) {
+    console.log('Posting a twss');
+    github.issues.createComment({
+      user: data.repository.owner.login,
+      repo: data.repository.name,
+      number: data.issue.number,
+      body: "That's what she said!"
+    });
   } else {
     console.log('Not responding to this comment');
   }

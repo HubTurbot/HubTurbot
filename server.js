@@ -277,10 +277,12 @@ async function loadConfig(data) {
   };
 
   try {
-    // request config from repo
+    var user = data.repository.owner.login;
+    var repo = data.repository.name;
+    console.log(util.format('Getting config from %s/%s', user, repo));
+
     var configRes = await getRepoConfig({
-      user: data.repository.owner.login,
-      repo: data.repository.name,
+      user, repo,
       path: CONFIG_PATH,
       headers: {
         Accept: 'application/vnd.github.v3.raw'
@@ -313,13 +315,13 @@ async function work(body, req) {
   // console.log('\nheaders: ' + JSON.stringify(req.headers));
 
   var type = req.headers["x-github-event"];
+  console.log('Event type:', type);
 
   var data = {};
   try {
     data = JSON.parse(body.toString());
   } catch (e) {
-    console.log('json parse error');
-    console.error(e);
+    console.error('Parse error in request body', e);
   }
 
   var config = await loadConfig(data);
@@ -331,9 +333,9 @@ async function work(body, req) {
 
   // Call event type handler
   if (!actions[type]) {
-    console.log("Not handling event: " + type + ", action: " + data.action);
+    console.log("Not handling action: " + data.action);
   } else {
-    console.log("Handling event: " + type + ", action: " + data.action);
+    console.log("Handling action: " + data.action);
     await actions[type](config, data);
   }
 };

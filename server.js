@@ -250,10 +250,8 @@ async function handleIssueComment(data) {
 
 async function handlePRLabelChange(data) {
 
-  if (data.sender.login === "HubTurbot") {
-    console.log('Reacting to a label I added...');
-    // Make sure I don't react by changing a label!
-  }
+  if (data.sender.login === "HubTurbot")
+    return;
 
   // Label added to PR
   if (data.action === "labeled") {

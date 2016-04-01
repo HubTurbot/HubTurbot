@@ -219,6 +219,51 @@ function applyToReview(user, repo, number) {
   });
 }
 
+function createDefaultLabels(data) {
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: "s.Discarded",
+    color: "000000"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: "s.MergeApproved",
+    color: "2A6E2F"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: "s.Ongoing",
+    color: "6BC471"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: "s.OnHold",
+    color: "E2F3E8"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: "s.ToDiscuss",
+    color: "bfe5bf"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: "s.ToReview",
+    color: "47B74E"
+  });
+  github.issues.createLabel({
+    user: data.repository.owner.login,
+    repo: data.repository.name,
+    name: "s.ToMerge",
+    color: "38923D"
+  });
+}
+
 async function handleIssueComment(data) {
 
   // HubTurbot will not reply to itself
@@ -233,6 +278,8 @@ async function handleIssueComment(data) {
       number: data.issue.number,
       body: "That's what she said!"
     });
+  } else if (/@HubTurbot create all labels please/.test(data.comment.body)) {
+    createDefaultLabels(data);
   } else if (/ready (?:to|for) review/.test(data.comment.body)) {
     return applyToReview(
       data.repository.owner.login,

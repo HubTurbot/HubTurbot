@@ -175,9 +175,9 @@ function applyToReview(config, user, repo, number) {
   });
 }
 
-function createDefaultLabels(data) {
+function createDefaultLabels(config, data) {
 
-  var statusPrefix = "status.";
+  var statusPrefix = config.statusPrefix;
 
   github.issues.createLabel({
     user: data.repository.owner.login,
@@ -238,7 +238,7 @@ async function handleIssueComment(config, data) {
       body: "That's what she said!"
     });
   } else if (/@HubTurbot create all labels please/.test(data.comment.body)) {
-    createDefaultLabels(data);
+    createDefaultLabels(config, data);
   } else if (/ready (?:to|for) review/.test(data.comment.body)) {
     return applyToReview(
       config,

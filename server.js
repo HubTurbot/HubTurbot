@@ -195,7 +195,7 @@ async function handleIssueComment(config, data) {
       data.repository.owner.login,
       data.repository.name,
       data.issue.number);
-  } 
+  }
 }
 
 async function handlePRLabelChange(config, data) {
@@ -297,8 +297,8 @@ async function loadConfig(data) {
 
 function work(body, req) {
 
-  // console.log("body: " + body.toString());
-  // console.log("headers: " + JSON.stringify(req.headers));
+  console.log('\nbody: ' + body.toString());
+  console.log('\nheaders: ' + JSON.stringify(req.headers));
 
   var type = req.headers["x-github-event"];
 

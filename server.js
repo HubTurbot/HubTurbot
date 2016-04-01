@@ -105,14 +105,6 @@ function getRepoConfig(request) {
 
 async function suggestReviewer(config, data) {
 
-  if (config.actions.indexOf(data.action) === -1) {
-    console.log(
-      'Skipping because action is ' + data.action + '.',
-      'We only care about: "' + config.actions.join("', '") + '"'
-    );
-    return;
-  }
-
   var reviewers = await mentionBot.guessOwnersForPullRequest(
     data.repository.html_url, // 'https://github.com/fbsamples/bot-testing'
     data.pull_request.number, // 23
@@ -234,7 +226,7 @@ async function handleIssueComment(config, data) {
   if (data.comment.user.login === "HubTurbot") {
     return;
   }
-  
+
   if (/@HubTurbot create all labels please/.test(data.comment.body)) {
     console.log('Creating labels');
     createDefaultLabels(config, data);

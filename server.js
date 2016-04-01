@@ -229,7 +229,7 @@ function createDefaultLabels(config, data) {
 }
 
 async function handleIssueComment(config, data) {
-  
+
   // HubTurbot will not reply to itself
   if (data.comment.user.login === "HubTurbot") {
     return;
@@ -333,9 +333,15 @@ async function loadConfig(data) {
     reviewLabel: 'toReview'
   };
 
+  var user = data.repository.owner.login;
+  var repo = data.repository.name;
+
+  if (!(user && repo)) {
+    console.log(util.format('Can\'t load config from %s/%s', user, repo));
+    return repoConfig;
+  }
+
   try {
-    var user = data.repository.owner.login;
-    var repo = data.repository.name;
     console.log(util.format('Getting config from %s/%s', user, repo));
 
     var configRes = await getRepoConfig({

@@ -17,6 +17,7 @@ var mentionBot = require('./mention-bot.js');
 var messageGenerator = require('./message.js');
 var util = require('util');
 var twss = require('twss');
+twss.threshold = 0.9;
 
 var GitHubApi = require('github');
 

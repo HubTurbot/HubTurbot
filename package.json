@@ -4,7 +4,7 @@
   "license": "BSD-3-Clause",
   "repository": "facebook/mention-bot",
   "scripts": {
-    "test": "flow && jest && mocha --compilers js:babel-register",
+    "test": "flow && jest && mocha",
     "start": "node run-server.js"
   },
   "main": "./run-mention-bot.js",

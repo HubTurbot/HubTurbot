@@ -273,6 +273,23 @@ function determineLabelName(name) {
   }
 }
 
+function labelExists(allLabels, label) {
+  var actualLabel = null
+  
+  for (var lab of allLabels) {
+    var l = determineLabelName(lab);
+    if (l.name === label) {
+      if (actualLabel) {
+        // Already set, label is ambiguous
+        return null;
+      }
+      actualLabel = l.full
+    }
+  }
+
+  return actualLabel;
+}
+
 async function handleIssueComment(config, data) {
 
   // HubTurbot will not reply to itself
@@ -298,8 +315,9 @@ async function handleIssueComment(config, data) {
 
   var allLabels = await getAllLabels(config,data.repository.owner.login, data.repository.name);
 
-  if (allLabels.indexOf(mentionedLabel) < 0 ) {
-    console.log('Label does not exist! Not adding.')
+  var mentionedLabel = labelExists(allLabels, mentionedLabel);
+  if (!mentionedLabel) {
+    console.log('Label does not exist or is ambiguous! Not adding.')
     return;
   }
 

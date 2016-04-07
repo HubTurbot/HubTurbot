@@ -1,5 +1,5 @@
 
-# HubTurbot :speech_balloon:
+# HubTurbot :speech_balloon: ![](https://travis-ci.org/HubTurbot/HubTurbot.svg)
 
 I am a fork of [mention-bot](https://github.com/facebook/mention-bot). My purpose is to ~~pass butter~~ help run open source projects.
 

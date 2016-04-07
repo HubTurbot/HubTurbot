@@ -24,44 +24,22 @@ var GitHubApi = require('github');
 var CONFIG_PATH = '.hubturbot';
 
 if (!process.env.GITHUB_TOKEN) {
-  console.error('The bot was started without a github account to post with.');
-  console.error('To get started:');
-  console.error('1) Create a new account for the bot');
-  console.error('2) Settings > Personal access tokens > Generate new token');
-  console.error('3) Only check `public_repo` and click Generate token');
-  console.error('4) Run the following command:');
-  console.error('GITHUB_TOKEN=insert_token_here npm start');
-  console.error('5) Run the following command in another tab:');
-  console.error('curl -X POST -d @__tests__/data/23.webhook http://localhost:5000/');
-  console.error('6) Check that it commented here: https://github.com/fbsamples/bot-testing/pull/23');
-  process.exit(1);
+  console.log('Bot was started without GitHub account to post with.');
+  console.log('Running in test mode instead.');
+  var github = require('./github-stubs');
+} else {
+  var github = new GitHubApi({
+    version: '3.0.0',
+    host: config.github.apiHost,
+    pathPrefix: config.github.pathPrefix,
+    protocol: config.github.protocol,
+    port: config.github.port
+  });
+  github.authenticate({
+    type: 'oauth',
+    token: process.env.GITHUB_TOKEN
+  });
 }
-
-if (!process.env.GITHUB_USER) {
-  console.warn(
-    'There was no github user detected.',
-    'This is fine, but mention-bot won\'t work with private repos.'
-  );
-  console.warn(
-    'To make mention-bot work with private repos, please expose',
-    'GITHUB_USER and GITHUB_PASSWORD as environment variables.',
-    'The user and password must have access to the private repo',
-    'you want to use.'
-  );
-}
-
-var github = new GitHubApi({
-  version: '3.0.0',
-  host: config.github.apiHost,
-  pathPrefix: config.github.pathPrefix,
-  protocol: config.github.protocol,
-  port: config.github.port
-});
-
-github.authenticate({
-  type: 'oauth',
-  token: process.env.GITHUB_TOKEN
-});
 
 var app = express();
 

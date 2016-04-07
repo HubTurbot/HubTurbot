@@ -278,7 +278,7 @@ function labelExists(allLabels, label) {
   
   for (var lab of allLabels) {
     var l = determineLabelName(lab);
-    if (l.name.toLowerCase() === label.toLowerCase()) {
+    if (l.name.toLowerCase() === label.toLowerCase() || l.full.toLowerCase() === label.toLowerCase()) {
       if (actualLabel) {
         // Already set, label is ambiguous
         return null;

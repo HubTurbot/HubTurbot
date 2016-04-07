@@ -1,20 +1,27 @@
 
-var requests = [];
+var receivedRequests = [];
 
 module.exports = {
+  receivedRequests: function () {
+    return receivedRequests;
+  },
   stub: {
     clear: function () {
-      requests = [];
+      receivedRequests = [];
+    }
+  },
+  repos: {
+    getContent: function (req, f) {
+      f('{}');
     }
   },
   issues: {
-    getAllLabels: function (user, repo) {
-      return [];
+    getLabels: function (data, f) {
+      f(null, [{name: 'status.toReview'}, {name: 'status.toMerge'}, {name: 'bug'}]);
     },
-    setLabels: function (user, repo, number, labels) {
-      requests.push({
-        type: 'setLabels', user, repo, number, labels
-      });
+    edit: function (data, f) {
+      receivedRequests.push(data);
+      f(null, {});
     }
   }
 }

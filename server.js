@@ -173,9 +173,15 @@ function applyToReview(config, user, repo, number) {
   });
 }
 
-function getLabels(config, user, repo, number) {
+function getIssueLabels(config, user, repo, number) {
   return promisify(github.issues.getIssueLabels)({
     user, repo, number
+  }).then(res => res.map(r => r.name));
+}
+
+function getAllLabels(config, user, repo) {
+  return promisify(github.issues.getLabels)({
+    user, repo
   }).then(res => res.map(r => r.name));
 }
 
@@ -278,7 +284,7 @@ async function handleIssueComment(config, data) {
   // Add or remove labels
 
   var comment = data.comment.body;
-  var myself = /@HubTurbot/i;
+  var myself = /^@HubTurbot/i;
   var shouldRespond = myself.test(comment);
   if (!shouldRespond) {
     console.log('Not mentioned, not responding');
@@ -289,6 +295,13 @@ async function handleIssueComment(config, data) {
   console.log('Existing labels:', existingLabels);
 
   var mentionedLabel = comment.replace(myself, '').trim();
+
+  var allLabels = await getAllLabels(config,data.repository.owner.login, data.repository.name);
+
+  if (allLabels.indexOf(mentionedLabel) < 0 ) {
+    console.log('Label does not exist! Not adding.')
+    return;
+  }
 
   if (existingLabels.indexOf(mentionedLabel) >= 0) {
     var newLabels = existingLabels.filter(l => l !== mentionedLabel);

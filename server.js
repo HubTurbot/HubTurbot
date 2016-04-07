@@ -173,6 +173,23 @@ function applyToReview(config, user, repo, number) {
   });
 }
 
+function getLabels(config, user, repo, number) {
+  return promisify(github.issues.getIssueLabels)({
+    user, repo, number
+  }).then(res => res.map(r => r.name));
+}
+
+function setLabels(config, user, repo, number, labels) {
+  return promisify(github.issues.edit)({
+    user, repo, number, labels
+  }).catch(function (e) {
+    console.log('Failed to set labels to', labels, e, e.stack);
+    if (e.code === 404) {
+      console.log('Have you added HubTurbot as a collaborator to your repository?');
+    }
+  });
+}
+
 function createDefaultLabels(config, data) {
 
   var statusPrefix = config.statusPrefix;
@@ -221,40 +238,79 @@ function createDefaultLabels(config, data) {
   });
 }
 
+function determineLabelName(name) {
+  var exclusive = /([\w\s]+)\.([\w\s]+)/;
+  var nonexclusive = /([\w\s]+)-([\w\s]+)/;
+  var match;
+
+  if (match = exclusive.exec(name)) {
+    return {
+      group: match[1],
+      name: match[2],
+      full: name,
+      exclusive: true
+    };
+  } else if (match = nonexclusive.exec(name)) {
+    return {
+      group: match[1],
+      name: match[2],
+      full: name,
+      exclusive: false
+    };
+  } else {
+    return {
+      group: '',
+      name,
+      full: name,
+      exclusive: false
+    };
+  }
+}
+
 async function handleIssueComment(config, data) {
 
   // HubTurbot will not reply to itself
   if (data.comment.user.login === "HubTurbot") {
+    console.log('I don\'t respond to myself');
     return;
   }
 
-  if (/@HubTurbot create all labels please/.test(data.comment.body)) {
-    console.log('Creating labels');
-    createDefaultLabels(config, data);
-    github.issues.createComment({
-      user: data.repository.owner.login,
-      repo: data.repository.name,
-      number: data.issue.number,
-      body: "All done!"
-    });
-  } else if (/ready (?:to|for) review/.test(data.comment.body)) {
-    console.log('Applying toReview');
-    return applyToReview(
-      config,
-      data.repository.owner.login,
-      data.repository.name,
-      data.issue.number);
-  } else if (twss.is(data.comment.body)) {
-    console.log('Posting a twss');
-    github.issues.createComment({
-      user: data.repository.owner.login,
-      repo: data.repository.name,
-      number: data.issue.number,
-      body: "That's what she said!"
-    });
-  } else {
-    console.log('Not responding to this comment');
+  // Add or remove labels
+
+  var comment = data.comment.body;
+  var myself = /@HubTurbot/i;
+  var shouldRespond = myself.test(comment);
+  if (!shouldRespond) {
+    console.log('Not mentioned, not responding');
+    return;
   }
+
+  var existingLabels = data.issue.labels.map(r => r.name);
+  console.log('Existing labels:', existingLabels);
+
+  var mentionedLabel = comment.replace(myself, '').trim();
+
+  if (existingLabels.indexOf(mentionedLabel) >= 0) {
+    var newLabels = existingLabels.filter(l => l !== mentionedLabel);
+  } else {
+    var parsedLabel = determineLabelName(mentionedLabel);
+    if (parsedLabel.exclusive) {
+      var newLabels = existingLabels
+        .filter(l => determineLabelName(l).group !== parsedLabel.group)
+        .concat([parsedLabel.full]);
+    } else {
+      var newLabels = existingLabels
+        .concat([parsedLabel.full]);
+    }
+  }
+
+  await setLabels(config,
+    data.repository.owner.login,
+    data.repository.name,
+    data.issue.number,
+    newLabels);
+
+  console.log('New labels:', newLabels);
 }
 
 async function handlePRLabelChange(config, data) {
@@ -383,7 +439,6 @@ async function work(body, req) {
   var config = await loadConfig(data);
 
   var actions = {
-    pull_request: handlePullRequest,
     issue_comment: handleIssueComment
   };
 

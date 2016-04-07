@@ -149,43 +149,13 @@ function promisify(f) {
   };
 }
 
-function applyToReview(config, user, repo, number) {
-  return promisify(github.issues.getIssueLabels)({
-    user, repo, number
-  }).then(function(res) {
-
-    var labels = res.map(r => r.name);
-
-    // Remove other prefixed labels
-    var groupRegex = new RegExp('^' + config.statusPrefix);
-    var newLabels = labels
-      .filter(label => !groupRegex.test(label))
-      .concat([config.statusPrefix + config.reviewLabel]);
-
-    return promisify(github.issues.edit)({
-      user, repo, number, labels: newLabels
-    });
-  }).catch(function(e) {
-    console.log('Failed to change label', e, e.stack)
-    if (e.code === 404) {
-      console.log('Have you added HubTurbot as a collaborator to your repository?');
-    }
-  });
-}
-
-function getIssueLabels(config, user, repo, number) {
-  return promisify(github.issues.getIssueLabels)({
-    user, repo, number
-  }).then(res => res.map(r => r.name));
-}
-
-function getAllLabels(config, user, repo) {
+function getAllLabels(user, repo) {
   return promisify(github.issues.getLabels)({
     user, repo
   }).then(res => res.map(r => r.name));
 }
 
-function setLabels(config, user, repo, number, labels) {
+function setLabels(user, repo, number, labels) {
   return promisify(github.issues.edit)({
     user, repo, number, labels
   }).catch(function (e) {
@@ -275,7 +245,7 @@ function determineLabelName(name) {
 
 function labelExists(allLabels, label) {
   var actualLabel = null
-  
+
   for (var lab of allLabels) {
     var l = determineLabelName(lab);
     if (l.name.toLowerCase() === label.toLowerCase() || l.full.toLowerCase() === label.toLowerCase()) {
@@ -313,7 +283,7 @@ async function handleIssueComment(config, data) {
 
   var mentionedLabel = comment.replace(myself, '').trim();
 
-  var allLabels = await getAllLabels(config,data.repository.owner.login, data.repository.name);
+  var allLabels = await getAllLabels(data.repository.owner.login, data.repository.name);
 
   var mentionedLabel = labelExists(allLabels, mentionedLabel);
   if (!mentionedLabel) {
@@ -335,7 +305,7 @@ async function handleIssueComment(config, data) {
     }
   }
 
-  await setLabels(config,
+  await setLabels(
     data.repository.owner.login,
     data.repository.name,
     data.issue.number,

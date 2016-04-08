@@ -5,6 +5,7 @@
   "repository": "facebook/mention-bot",
   "scripts": {
     "test": "flow && jest && mocha",
+    "test:windows": "mocha",
     "start": "node run-server.js"
   },
   "main": "./run-mention-bot.js",
